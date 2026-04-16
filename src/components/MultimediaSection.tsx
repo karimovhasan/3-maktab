@@ -15,8 +15,8 @@ export default function MultimediaSection() {
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const galleryList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        id: doc.id
       })) as any[];
       
       if (galleryList.length > 0) {

@@ -24,8 +24,8 @@ export default function NewsSection() {
     
     const unsubscribeNews = onSnapshot(q, (snapshot) => {
       const newsList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        id: doc.id
       })) as NewsItem[];
       
       if (newsList.length > 0) {

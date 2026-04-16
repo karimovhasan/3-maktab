@@ -1,4 +1,4 @@
-import { GraduationCap, MapPin, Phone, Mail, Facebook, Instagram, Send, ArrowUp } from 'lucide-react';
+import { GraduationCap, MapPin, Phone, Mail, Facebook, Instagram, Send, ArrowUp, Github } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Footer() {
@@ -33,6 +33,9 @@ export default function Footer() {
               </a>
               <a href="#" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-blue-600 hover:text-white transition-all">
                 <Send className="w-5 h-5" />
+              </a>
+              <a href="https://github.com/karimovhasan/3-maktab" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-900 hover:text-white transition-all">
+                <Github className="w-5 h-5" />
               </a>
             </div>
           </div>

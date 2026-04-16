@@ -73,17 +73,29 @@ export default function AdminPanel() {
 
   const [isImporting, setIsImporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string | number, type: 'news' | 'gallery' } | null>(null);
+  const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const handleImportExamples = async () => {
     if (!fbUser || (fbUser.email?.toLowerCase() !== 'hasankarimov023@gmail.com' && fbUser.email?.toLowerCase() !== 'admin@maktab3.uz')) {
-      alert(lang === 'uz' ? 'Xatolik: Sizda ma’lumotlarni import qilish huquqi yo‘q.' : 'Ошибка: У вас нет прав на импорт данных.');
+      setNotification({
+        message: lang === 'uz' ? 'Xatolik: Sizda ma’lumotlarni import qilish huquqi yo‘q.' : 'Ошибка: У вас нет прав на импорт данных.',
+        type: 'error'
+      });
       return;
     }
 
     setIsImporting(true);
     try {
       // Import News
-      const newsToImport = newsData[lang as 'uz' | 'ru'];
+      const newsToImport = initialNews[lang as 'uz' | 'ru'];
       for (const item of newsToImport) {
         await addDoc(collection(db, 'news'), {
           title: item.title,
@@ -103,10 +115,16 @@ export default function AdminPanel() {
         });
       }
 
-      alert(lang === 'uz' ? 'Namunaviy ma’lumotlar muvaffaqiyatli yuklandi!' : 'Образцовые данные успешно загружены!');
+      setNotification({
+        message: lang === 'uz' ? 'Namunaviy ma’lumotlar muvaffaqiyatli yuklandi!' : 'Образцовые данные успешно загружены!',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error importing examples:', error);
-      alert(lang === 'uz' ? 'Xatolik: Ma’lumotlarni yuklab bo‘lmadi.' : 'Ошибка: Не удалось загрузить данные.');
+      setNotification({
+        message: lang === 'uz' ? 'Xatolik: Ma’lumotlarni yuklab bo‘lmadi.' : 'Ошибка: Не удалось загрузить данные.',
+        type: 'error'
+      });
     } finally {
       setIsImporting(false);
     }
@@ -150,8 +168,8 @@ export default function AdminPanel() {
     const newsQuery = query(collection(db, 'news'));
     const unsubscribeNews = onSnapshot(newsQuery, (snapshot) => {
       const newsList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        id: doc.id
       })) as NewsItem[];
       
       // Sort by createdAt desc in memory to handle missing fields gracefully
@@ -170,8 +188,8 @@ export default function AdminPanel() {
     const galleryQuery = query(collection(db, 'gallery'));
     const unsubscribeGallery = onSnapshot(galleryQuery, (snapshot) => {
       const galleryList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        id: doc.id
       })) as GalleryItem[];
       
       // Sort by createdAt desc in memory
@@ -196,7 +214,10 @@ export default function AdminPanel() {
   const handleAddNews = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fbUser || (fbUser.email?.toLowerCase() !== 'hasankarimov023@gmail.com' && fbUser.email?.toLowerCase() !== 'admin@maktab3.uz')) {
-      alert(lang === 'uz' ? 'Xatolik: Sizda yangilik qo‘shish huquqi yo‘q.' : 'Ошибка: У вас нет прав на добавление новостей.');
+      setNotification({
+        message: lang === 'uz' ? 'Xatolik: Sizda yangilik qo‘shish huquqi yo‘q.' : 'Ошибка: У вас нет прав na dobavlenie novostey.',
+        type: 'error'
+      });
       return;
     }
     setIsSaving(true);
@@ -212,13 +233,16 @@ export default function AdminPanel() {
       await addDoc(collection(db, 'news'), newsData);
       setIsAdding(false);
       setNewNews({ title: '', image: '', excerpt: '', date: new Date().toLocaleDateString('ru-RU') });
+      setNotification({
+        message: lang === 'uz' ? 'Yangilik saqlandi.' : 'Новость сохранена.',
+        type: 'success'
+      });
     } catch (error: any) {
       console.error('Error adding news:', error);
-      if (error.message?.includes('permission-denied')) {
-        alert(lang === 'uz' ? 'Xatolik: Ruxsat berilmadi. Iltimos, qaytadan kiring.' : 'Ошибка: Доступ запрещен. Пожалуйста, войдите заново.');
-      } else {
-        alert(lang === 'uz' ? 'Xatolik: Yangilikni saqlab bo‘lmadi.' : 'Ошибка: Не удалось сохранить новость.');
-      }
+      setNotification({
+        message: lang === 'uz' ? 'Xatolik: Yangilikni saqlab bo‘lmadi.' : 'Ошибка: Не удалось сохранить новость.',
+        type: 'error'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -228,7 +252,10 @@ export default function AdminPanel() {
     e.preventDefault();
     if (!newGallery.src) return;
     if (!fbUser || (fbUser.email?.toLowerCase() !== 'hasankarimov023@gmail.com' && fbUser.email?.toLowerCase() !== 'admin@maktab3.uz')) {
-      alert(lang === 'uz' ? 'Xatolik: Sizda rasm qo‘shish huquqi yo‘q.' : 'Ошибка: У вас нет прав на добавление фото.');
+      setNotification({
+        message: lang === 'uz' ? 'Xatolik: Sizda rasm qo‘shish huquqi yo‘q.' : 'Ошибка: У вас нет прав на добавление фото.',
+        type: 'error'
+      });
       return;
     }
     setIsSaving(true);
@@ -241,13 +268,16 @@ export default function AdminPanel() {
       await addDoc(collection(db, 'gallery'), galleryData);
       setIsAddingGallery(false);
       setNewGallery({ src: '', alt: '' });
+      setNotification({
+        message: lang === 'uz' ? 'Rasm saqlandi.' : 'Фото сохранено.',
+        type: 'success'
+      });
     } catch (error: any) {
       console.error('Error adding gallery:', error);
-      if (error.message?.includes('permission-denied')) {
-        alert(lang === 'uz' ? 'Xatolik: Ruxsat berilmadi.' : 'Ошибка: Доступ запрещен.');
-      } else {
-        alert(lang === 'uz' ? 'Xatolik: Rasmni saqlab bo‘lmadi.' : 'Ошибка: Не удалось сохранить фото.');
-      }
+      setNotification({
+        message: lang === 'uz' ? 'Xatolik: Rasmni saqlab bo‘lmadi.' : 'Ошибка: Не удалось сохранить фото.',
+        type: 'error'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -266,44 +296,56 @@ export default function AdminPanel() {
         excerpt: editingItem.excerpt
       });
       setEditingItem(null);
+      setNotification({
+        message: lang === 'uz' ? 'Yangilik yangilandi.' : 'Новость обновлена.',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error updating news:', error);
+      setNotification({
+        message: lang === 'uz' ? 'Xatolik: Yangilashda xatolik yuz berdi.' : 'Ошибка при обновлении.',
+        type: 'error'
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDeleteNews = async (id: string | number) => {
-    if (!fbUser || (fbUser.email?.toLowerCase() !== 'hasankarimov023@gmail.com' && fbUser.email?.toLowerCase() !== 'admin@maktab3.uz')) {
-      alert(lang === 'uz' ? 'Xatolik: Sizda yangilikni o‘chirish huquqi yo‘q.' : 'Ошибка: У вас нет прав на удаление новостей.');
-      return;
-    }
-
-    if (window.confirm(lang === 'uz' ? 'Haqiqatan ham ushbu yangilikni o‘chirmoqchimisiz?' : 'Вы действительно хотите удалить эту новость?')) {
-      try {
-        await deleteDoc(doc(db, 'news', id.toString()));
-        alert(lang === 'uz' ? 'Yangilik muvaffaqiyatli o‘chirildi.' : 'Новость успешно удалена.');
-      } catch (error: any) {
-        console.error('Error deleting news:', error);
-        alert(lang === 'uz' ? `Xatolik: Yangilikni o‘chirib bo‘lmadi. ${error.message}` : `Ошибка: Не удалось удалить новость. ${error.message}`);
-      }
-    }
+  const handleDeleteNews = (id: string | number) => {
+    setItemToDelete({ id, type: 'news' });
   };
 
-  const handleDeleteGallery = async (id: string | number) => {
+  const handleDeleteGallery = (id: string | number) => {
+    setItemToDelete({ id, type: 'gallery' });
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    const { id, type } = itemToDelete;
+
     if (!fbUser || (fbUser.email?.toLowerCase() !== 'hasankarimov023@gmail.com' && fbUser.email?.toLowerCase() !== 'admin@maktab3.uz')) {
-      alert(lang === 'uz' ? 'Xatolik: Sizda rasmni o‘chirish huquqi yo‘q.' : 'Ошибка: У вас нет прав на удаление фото.');
+      setNotification({
+        message: lang === 'uz' ? `Xatolik: Sizda ${type === 'news' ? 'yangilikni' : 'rasmni'} o‘chirish huquqi yo‘q.` : `Ошибка: У вас нет прав на удаление ${type === 'news' ? 'новости' : 'фото'}.`,
+        type: 'error'
+      });
+      setItemToDelete(null);
       return;
     }
 
-    if (window.confirm(lang === 'uz' ? 'Haqiqatan ham ushbu rasmni o‘chirmoqchimisiz?' : 'Вы действительно хотите удалить это фото?')) {
-      try {
-        await deleteDoc(doc(db, 'gallery', id.toString()));
-        alert(lang === 'uz' ? 'Rasm muvaffaqiyatli o‘chirildi.' : 'Фото успешно удалено.');
-      } catch (error: any) {
-        console.error('Error deleting gallery:', error);
-        alert(lang === 'uz' ? `Xatolik: Rasmni o‘chirib bo‘lmadi. ${error.message}` : `Ошибка: Не удалось удалить фото. ${error.message}`);
-      }
+    try {
+      await deleteDoc(doc(db, type, id.toString()));
+      setNotification({
+        message: lang === 'uz' ? `${type === 'news' ? 'Yangilik' : 'Rasm'} muvaffaqiyatli o‘chirildi.` : `${type === 'news' ? 'Новость' : 'Фото'} успешно удалена.`,
+        type: 'success'
+      });
+    } catch (error: any) {
+      console.error(`Error deleting ${type}:`, error);
+      setNotification({
+        message: lang === 'uz' ? `Xatolik: O‘chirib bo‘lmadi.` : `Ошибка: Не удалось удалить.`,
+        type: 'error'
+      });
+    } finally {
+      setItemToDelete(null);
     }
   };
 
@@ -551,6 +593,44 @@ export default function AdminPanel() {
               </div>
             </motion.div>
           </div>
+        )}
+
+        {itemToDelete && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setItemToDelete(null)} className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-sm bg-white rounded-[32px] shadow-2xl p-8 text-center">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                {lang === 'uz' ? "O'chirishni tasdiqlang" : "Подтвердите удаление"}
+              </h3>
+              <p className="text-gray-500 text-sm mb-8">
+                {lang === 'uz' 
+                  ? "Haqiqatan ham ushbu ma'lumotni o'chirmoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi." 
+                  : "Вы действительно хотите удалить эти данные? Это действие невозможно отменить."}
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setItemToDelete(null)} className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-all">
+                  {lang === 'uz' ? "Bekor qilish" : "Отмена"}
+                </button>
+                <button onClick={confirmDelete} className="flex-1 py-3 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-200">
+                  {lang === 'uz' ? "O'chirish" : "Удалить"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {notification && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: 50 }} 
+            className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[400] px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 font-bold text-sm ${notification.type === 'success' ? 'bg-green-600 text-white fill-green-600' : 'bg-red-600 text-white'}`}
+          >
+            {notification.message}
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
