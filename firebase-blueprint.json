@@ -20,12 +20,23 @@
       "type": "object",
       "properties": {
         "title": { "type": "string" },
-        "content": { "type": "string" },
+        "excerpt": { "type": "string" },
         "image": { "type": "string", "format": "uri" },
-        "authorId": { "type": "string" },
+        "date": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "content", "authorId"]
+      "required": ["title", "excerpt"]
+    },
+    "Gallery": {
+      "title": "Gallery",
+      "description": "Maktab fotogalereyasi",
+      "type": "object",
+      "properties": {
+        "src": { "type": "string", "format": "uri" },
+        "alt": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["src"]
     }
   },
   "firestore": {
@@ -36,6 +47,10 @@
     "/news/{newsId}": {
       "schema": "News",
       "description": "Yangiliklar to‘plami"
+    },
+    "/gallery/{imageId}": {
+      "schema": "Gallery",
+      "description": "Fotogalereya to‘plami"
     }
   }
 }

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, User, Lock, ArrowRight, Loader2, AlertCircle, Eye, EyeOff, Info } from 'lucide-react';
+import { X, Lock, Loader2, AlertCircle, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+
+import { signInWithEmail, signUpWithEmail } from '../firebase';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -13,24 +16,61 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showHelp, setShowHelp] = useState(false);
+  const { lang, t } = useLanguage();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!login || !password) return;
+    const trimmedLogin = login.trim();
+    if (!trimmedLogin || !password) return;
     
     setLoading(true);
     setError(null);
     
-    // Simple local check as requested by the user to avoid Firebase configuration issues
-    if (login === 'Admin' && password === 'admin1') {
-      localStorage.setItem('isAdminLoggedIn', 'true');
+    try {
+      // Map "Admin" to a specific email for Firebase Auth
+      const loginLower = trimmedLogin.toLowerCase();
+      const email = loginLower === 'admin' ? 'admin@maktab3.uz' : (trimmedLogin.includes('@') ? trimmedLogin : `${loginLower}@maktab3.uz`);
+      
+      try {
+        await signInWithEmail(email, password);
+      } catch (signInErr: any) {
+        // Handle "operation-not-allowed" error specifically
+        if (signInErr.code === 'auth/operation-not-allowed') {
+          // If Firebase is not configured, fallback to local login for the hardcoded admin
+          if (loginLower === 'admin' && password === 'admin1') {
+            localStorage.setItem('isAdminLoggedIn', 'true');
+            window.dispatchEvent(new Event('auth-change'));
+            onClose();
+            return;
+          }
+          
+          setError(lang === 'uz' 
+            ? 'Xatolik: Firebase-da login/parol funksiyasi yoqilmagan. Iltimos, quyidagi havolaga kirib uni yoqing: https://console.firebase.google.com/project/gen-lang-client-0334523506/authentication/providers' 
+            : 'Ошибка: В Firebase не включен вход по логину/паролю. Пожалуйста, перейдите по ссылке и включите его: https://console.firebase.google.com/project/gen-lang-client-0334523506/authentication/providers');
+          return;
+        }
+
+        // If it's the first time and it's the admin account, try to create it
+        if (loginLower === 'admin' && (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/invalid-email')) {
+          try {
+            await signUpWithEmail(email, password);
+          } catch (signUpErr) {
+            // If signup also fails, throw original error
+            throw signInErr;
+          }
+        } else {
+          throw signInErr;
+        }
+      }
+      
       window.dispatchEvent(new Event('auth-change'));
       onClose();
-      setLoading(false);
-      return;
-    } else {
-      setError('Login yoki parol noto‘g‘ri. Iltimos, qaytadan tekshirib ko‘ring.');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(lang === 'uz' 
+        ? 'Login yoki parol noto‘g‘ri. Iltimos, qaytadan tekshirib ko‘ring.' 
+        : 'Логин или пароль неверны. Пожалуйста, проверьте еще раз.');
+    } finally {
       setLoading(false);
     }
   };
@@ -66,13 +106,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               <div className="mb-8">
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4">
                   <Lock className="w-3 h-3" />
-                  Xavfsiz kirish
+                  {lang === 'uz' ? 'Xavfsiz kirish' : 'Безопасный вход'}
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
                   Admin Panel
                 </h2>
                 <p className="text-gray-500 text-sm leading-relaxed">
-                  Tizimga kirish uchun login va parolingizni kiriting.
+                  {lang === 'uz' 
+                    ? 'Tizimga kirish uchun login va parolingizni kiriting.' 
+                    : 'Введите логин и пароль для входа в систему.'}
                 </p>
               </div>
 
@@ -96,7 +138,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       type="text"
                       value={login}
                       onChange={(e) => setLogin(e.target.value)}
-                      placeholder="Masalan: Admin"
+                      placeholder={lang === 'uz' ? 'Masalan: Admin' : 'Например: Admin'}
                       required
                       className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-500 outline-none transition-all text-sm font-medium"
                     />
@@ -104,7 +146,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-700 uppercase tracking-widest ml-1">Parol</label>
+                  <label className="text-xs font-bold text-gray-700 uppercase tracking-widest ml-1">
+                    {lang === 'uz' ? 'Parol' : 'Пароль'}
+                  </label>
                   <div className="relative group">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                     <input
@@ -134,47 +178,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      Tizimga kirish
+                      {lang === 'uz' ? 'Tizimga kirish' : 'Войти в систему'}
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
                 </button>
               </form>
 
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <button
-                  onClick={() => setShowHelp(!showHelp)}
-                  className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-blue-600 transition-colors mx-auto"
-                >
-                  <Info className="w-4 h-4" />
-                  Kirishda muammo bormi?
-                </button>
-
-                <AnimatePresence>
-                  {showHelp && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-4 p-4 bg-blue-50/50 rounded-2xl text-[11px] text-blue-800 leading-relaxed space-y-2">
-                        <p className="font-bold uppercase tracking-wider">Kirish ma’lumotlari:</p>
-                        <ul className="list-disc ml-4 space-y-1">
-                          <li>Login: <b>Admin</b></li>
-                          <li>Parol: <b>admin1</b></li>
-                        </ul>
-                        <p className="mt-2 text-[10px] opacity-70 italic">
-                          Eslatma: Ushbu ma’lumotlar faqat maktab rahbari uchun mo‘ljallangan.
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
               <p className="mt-8 text-center text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">
-                Faqat vakolatli xodimlar uchun
+                {lang === 'uz' ? 'Faqat vakolatli xodimlar uchun' : 'Только для уполномоченного персонала'}
               </p>
             </div>
           </motion.div>

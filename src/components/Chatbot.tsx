@@ -1,13 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageCircle, X, Send, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
+  const { lang, t } = useLanguage();
   const [messages, setMessages] = useState([
-    { text: 'Assalomu alaykum! Termiz shahar 3-maktab chatbotiga xush kelibsiz. Sizga qanday yordam bera olaman?', isBot: true },
+    { text: t('chatbot.welcome'), isBot: true },
   ]);
   const [input, setInput] = useState('');
+
+  useEffect(() => {
+    // Update initial message when language changes
+    setMessages([{ text: t('chatbot.welcome'), isBot: true }]);
+  }, [lang, t]);
+
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener('open-chatbot', handleOpen);
+    return () => window.removeEventListener('open-chatbot', handleOpen);
+  }, []);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -18,15 +31,24 @@ export default function Chatbot() {
 
     // Simple automated response
     setTimeout(() => {
-      let botResponse = "Kechirasiz, hozirda operatorlarimiz band. Iltimos, savolingizni aniqroq yozing yoki maktab ma’muriyati bilan bog‘laning.";
+      let botResponse = lang === 'uz' 
+        ? "Kechirasiz, hozirda operatorlarimiz band. Iltimos, savolingizni aniqroq yozing yoki maktab ma’muriyati bilan bog‘laning."
+        : "Извините, сейчас наши операторы заняты. Пожалуйста, напишите свой вопрос более четко или свяжитесь с администрацией школы.";
+      
       const lowerInput = input.toLowerCase();
       
-      if (lowerInput.includes('jadval')) {
-        botResponse = "Dars jadvalini saytimizning 'Dars jadvali' bo‘limidan yoki yuqoridagi menyu orqali yuklab olishingiz mumkin.";
-      } else if (lowerInput.includes('manzil') || lowerInput.includes('qayerda')) {
-        botResponse = "Maktabimiz Termiz shahri, Navoiy ko‘chasi, 12-uyda joylashgan.";
-      } else if (lowerInput.includes('telefon') || lowerInput.includes('raqam')) {
-        botResponse = "Biz bilan bog‘lanish uchun raqam: +998 (76) 221-23-45";
+      if (lowerInput.includes('jadval') || lowerInput.includes('расписание')) {
+        botResponse = lang === 'uz'
+          ? "Dars jadvalini saytimizning 'Dars jadvali' bo‘limidan yoki yuqoridagi menyu orqali yuklab olishingiz mumkin."
+          : "Расписание уроков вы можете скачать в разделе 'Расписание' нашего сайта или через верхнее меню.";
+      } else if (lowerInput.includes('manzil') || lowerInput.includes('адрес') || lowerInput.includes('qayerda') || lowerInput.includes('где')) {
+        botResponse = lang === 'uz'
+          ? "Maktabimiz Termiz shahri, Barkamol Avlod ko'chasi joylashgan."
+          : "Наша школа находится в городе Термез, улица Баркамол Авлод.";
+      } else if (lowerInput.includes('telefon') || lowerInput.includes('телефон') || lowerInput.includes('raqam') || lowerInput.includes('номер')) {
+        botResponse = lang === 'uz'
+          ? "Biz bilan bog‘lanish uchun raqam: +998 (76) 221-23-45"
+          : "Номер для связи с нами: +998 (76) 221-23-45";
       }
 
       setMessages((prev) => [...prev, { text: botResponse, isBot: true }]);
@@ -50,8 +72,8 @@ export default function Chatbot() {
                   <MessageCircle className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold">Maktab Yordamchisi</h3>
-                  <p className="text-[10px] text-blue-100 uppercase tracking-widest">Onlayn</p>
+                  <h3 className="font-bold">{lang === 'uz' ? 'Maktab Yordamchisi' : 'Школьный Помощник'}</h3>
+                  <p className="text-[10px] text-blue-100 uppercase tracking-widest">{lang === 'uz' ? 'Onlayn' : 'Онлайн'}</p>
                 </div>
               </div>
               <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
@@ -81,7 +103,7 @@ export default function Chatbot() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Savolingizni yozing..."
+                placeholder={lang === 'uz' ? 'Savolingizni yozing...' : 'Напишите свой вопрос...'}
                 className="flex-1 bg-gray-50 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
               <button

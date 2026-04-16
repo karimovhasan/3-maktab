@@ -1,34 +1,71 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Play, Maximize2 } from 'lucide-react';
-import { galleryImages } from '../data';
+import { galleryImages as initialGallery } from '../data';
+import { useLanguage } from '../context/LanguageContext';
+import { db } from '../firebase';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 
 export default function MultimediaSection() {
+  const { lang, t } = useLanguage();
+  const [gallery, setGallery] = useState(initialGallery);
+
+  useEffect(() => {
+    const q = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const galleryList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as any[];
+      
+      if (galleryList.length > 0) {
+        setGallery(galleryList);
+      } else {
+        setGallery(initialGallery);
+      }
+    }, (error) => {
+      console.error('Firestore error in MultimediaSection:', error);
+      setGallery(initialGallery);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   return (
-    <section className="py-24 bg-gray-900 text-white overflow-hidden">
+    <section id="gallery" className="py-24 bg-gray-900 text-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-20">
           <div>
             <span className="text-blue-500 font-bold uppercase tracking-widest text-sm">Multimedia</span>
-            <h2 className="text-4xl md:text-5xl font-bold mt-4 mb-6 leading-tight">
-              Maktab hayoti videolarda va suratlarda
+            <h2 className="text-4xl lg:text-5xl font-bold mt-4 mb-6 leading-tight">
+              {lang === 'uz' ? 'Maktab hayoti videolarda va suratlarda' : 'Школьная жизнь в видео и фотографиях'}
             </h2>
             <p className="text-gray-400 text-lg leading-relaxed mb-8">
-              Bizning maktabda nafaqat darslar, balki turli qiziqarli tadbirlar, sport musobaqalari va ijodiy to‘garaklar ham muntazam o‘tkaziladi.
+              {lang === 'uz' 
+                ? 'Bizning maktabda nafaqat darslar, balki turli qiziqarli tadbirlar, sport musobaqalari va ijodiy to‘garaklar ham muntazam o‘tkaziladi.'
+                : 'В нашей школе регулярно проводятся не только уроки, но и различные интересные мероприятия, спортивные соревнования и творческие кружки.'}
             </p>
-            <div className="flex gap-8">
-              <div>
-                <div className="text-3xl font-bold text-blue-500 mb-1">1200+</div>
-                <div className="text-sm text-gray-500 uppercase tracking-wider">O‘quvchilar</div>
+            <div className="flex flex-wrap gap-4 sm:gap-8">
+              <div className="flex-1 min-w-[80px]">
+                <div className="text-2xl sm:text-3xl font-bold text-blue-500 mb-1">1200+</div>
+                <div className="text-[10px] sm:text-sm text-gray-500 uppercase tracking-wider">
+                  {lang === 'uz' ? 'O‘quvchilar' : 'Ученики'}
+                </div>
               </div>
-              <div className="w-px h-12 bg-gray-800" />
-              <div>
-                <div className="text-3xl font-bold text-blue-500 mb-1">85+</div>
-                <div className="text-sm text-gray-500 uppercase tracking-wider">O‘qituvchilar</div>
+              <div className="hidden xs:block w-px h-12 bg-gray-800" />
+              <div className="flex-1 min-w-[80px]">
+                <div className="text-2xl sm:text-3xl font-bold text-blue-500 mb-1">85+</div>
+                <div className="text-[10px] sm:text-sm text-gray-500 uppercase tracking-wider">
+                  {lang === 'uz' ? 'O‘qituvchilar' : 'Учителя'}
+                </div>
               </div>
-              <div className="w-px h-12 bg-gray-800" />
-              <div>
-                <div className="text-3xl font-bold text-blue-500 mb-1">40+</div>
-                <div className="text-sm text-gray-500 uppercase tracking-wider">Sinflar</div>
+              <div className="hidden xs:block w-px h-12 bg-gray-800" />
+              <div className="flex-1 min-w-[80px]">
+                <div className="text-2xl sm:text-3xl font-bold text-blue-500 mb-1">40+</div>
+                <div className="text-[10px] sm:text-sm text-gray-500 uppercase tracking-wider">
+                  {lang === 'uz' ? 'Sinflar' : 'Классы'}
+                </div>
               </div>
             </div>
           </div>
@@ -37,7 +74,7 @@ export default function MultimediaSection() {
             <div className="aspect-video rounded-3xl overflow-hidden relative">
               <img
                 src="https://picsum.photos/seed/school-video/1280/720"
-                alt="Maktab videosi"
+                alt={lang === 'uz' ? 'Maktab videosi' : 'Видео школы'}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 referrerPolicy="no-referrer"
               />
@@ -48,17 +85,19 @@ export default function MultimediaSection() {
                 </div>
               </div>
             </div>
-            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl" />
+            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-blue-600/20 rounded-full" />
           </div>
         </div>
 
         <div>
           <div className="flex justify-between items-end mb-10">
-            <h3 className="text-2xl font-bold">Fotogalereya</h3>
-            <button className="text-blue-500 font-bold hover:underline">Barcha rasmlar</button>
+            <h3 className="text-2xl font-bold">{lang === 'uz' ? 'Fotogalereya' : 'Фотогалерея'}</h3>
+            <button className="text-blue-500 font-bold hover:underline">
+              {lang === 'uz' ? 'Barcha rasmlar' : 'Все фотографии'}
+            </button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {galleryImages.map((img, idx) => (
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+            {gallery.map((img, idx) => (
               <motion.div
                 key={img.id}
                 initial={{ opacity: 0, scale: 0.9 }}
