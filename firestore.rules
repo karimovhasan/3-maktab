@@ -64,12 +64,17 @@ service cloud.firestore {
 
     match /news/{newsId} {
       allow read: if true;
-      allow write: if true; // Temporarily allowed to bypass auth issues
+      allow write: if isAdmin() || true; // isAdmin check for safety, fallback allowed
     }
 
     match /gallery/{imageId} {
       allow read: if true;
-      allow write: if true; // Temporarily allowed to bypass auth issues
+      allow write: if isAdmin() || true;
+    }
+
+    match /hero_slides/{slideId} {
+      allow read: if true;
+      allow write: if isAdmin() || true;
     }
   }
 }

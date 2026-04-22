@@ -68,13 +68,13 @@ export const heroSlides = {
       id: 1,
       title: 'Maktabning rasmiy saytiga xush kelibsiz!',
       description: 'Termiz shahar 3-umumiy o‘rta ta’lim maktabi – zamonaviy ta’lim va innovatsion yondashuv.',
-      image: 'https://picsum.photos/seed/school-hero1/1920/1080',
+      image: 'https://picsum.photos/seed/termiz-school-1/1920/1080',
     },
     {
       id: 2,
       title: 'Yuksalish marralar sari',
       description: 'Bizning maktabda har bir o‘quvchi o‘z iqtidorini namoyon eta oladi.',
-      image: 'https://picsum.photos/seed/school-hero2/1920/1080',
+      image: 'https://picsum.photos/seed/termiz-school-2/1920/1080',
     },
   ],
   ru: [
@@ -82,13 +82,13 @@ export const heroSlides = {
       id: 1,
       title: 'Добро пожаловать на официальный сайт школы!',
       description: 'Средняя общеобразовательная школа №3 города Термеза – современное образование и инновационный подход.',
-      image: 'https://picsum.photos/seed/school-hero1/1920/1080',
+      image: 'https://picsum.photos/seed/termiz-school-1/1920/1080',
     },
     {
       id: 2,
       title: 'К высоким вершинам',
       description: 'В нашей школе каждый ученик может проявить свой талант.',
-      image: 'https://picsum.photos/seed/school-hero2/1920/1080',
+      image: 'https://picsum.photos/seed/termiz-school-2/1920/1080',
     },
   ]
 };

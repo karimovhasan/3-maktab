@@ -37,6 +37,19 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["src"]
+    },
+    "HeroSlide": {
+      "title": "HeroSlide",
+      "description": "Asosiy slayder rasmlari",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string", "format": "uri" },
+        "lang": { "type": "string", "enum": ["uz", "ru"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "image", "lang"]
     }
   },
   "firestore": {
@@ -51,6 +64,10 @@
     "/gallery/{imageId}": {
       "schema": "Gallery",
       "description": "Fotogalereya to‘plami"
+    },
+    "/hero_slides/{slideId}": {
+      "schema": "HeroSlide",
+      "description": "Asosiy slayder rasmlari to‘plami"
     }
   }
 }

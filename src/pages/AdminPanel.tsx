@@ -19,7 +19,7 @@ import {
   Images
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import { newsData as initialNews, galleryImages as initialGallery } from '../data';
+import { newsData as initialNews, galleryImages as initialGallery, heroSlides as initialHeroSlides } from '../data';
 import { db, auth, logout as firebaseLogout } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { 
@@ -49,13 +49,24 @@ interface GalleryItem {
   alt: string;
 }
 
+interface SlideItem {
+  id: string | number;
+  title: string;
+  description: string;
+  image: string;
+  lang: 'uz' | 'ru';
+}
+
 export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState<'news' | 'gallery'>('news');
+  const [activeTab, setActiveTab] = useState<'news' | 'gallery' | 'hero'>('news');
   const [news, setNews] = useState<NewsItem[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [slides, setSlides] = useState<SlideItem[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isAddingGallery, setIsAddingGallery] = useState(false);
+  const [isAddingSlide, setIsAddingSlide] = useState(false);
   const [editingItem, setEditingItem] = useState<NewsItem | null>(null);
+  const [editingSlide, setEditingSlide] = useState<SlideItem | null>(null);
   const [fbUser, setFbUser] = useState<FirebaseUser | null>(null);
   const { lang, setLang } = useLanguage();
   
@@ -71,9 +82,16 @@ export default function AdminPanel() {
     alt: ''
   });
 
+  const [newSlide, setNewSlide] = useState({
+    title: '',
+    description: '',
+    image: '',
+    lang: lang as 'uz' | 'ru'
+  });
+
   const [isImporting, setIsImporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ id: string | number, type: 'news' | 'gallery' } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string | number, type: 'news' | 'gallery' | 'hero_slides' } | null>(null);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
@@ -115,6 +133,19 @@ export default function AdminPanel() {
         });
       }
 
+      // Import Hero Slides
+      for (const [sLang, langSlides] of Object.entries(initialHeroSlides)) {
+        for (const slide of langSlides) {
+          await addDoc(collection(db, 'hero_slides'), {
+            title: slide.title,
+            description: slide.description,
+            image: slide.image,
+            lang: sLang,
+            createdAt: serverTimestamp()
+          });
+        }
+      }
+
       setNotification({
         message: lang === 'uz' ? 'Namunaviy ma’lumotlar muvaffaqiyatli yuklandi!' : 'Образцовые данные успешно загружены!',
         type: 'success'
@@ -130,7 +161,7 @@ export default function AdminPanel() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'news' | 'gallery' | 'edit' = 'news') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'news' | 'gallery' | 'edit' | 'hero' | 'hero-edit' = 'news') => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -138,8 +169,12 @@ export default function AdminPanel() {
         const result = reader.result as string;
         if (type === 'edit' && editingItem) {
           setEditingItem({ ...editingItem, image: result });
+        } else if (type === 'hero-edit' && editingSlide) {
+          setEditingSlide({ ...editingSlide, image: result });
         } else if (type === 'gallery') {
           setNewGallery({ ...newGallery, src: result });
+        } else if (type === 'hero') {
+          setNewSlide({ ...newSlide, image: result });
         } else {
           setNewNews({ ...newNews, image: result });
         }
@@ -204,10 +239,31 @@ export default function AdminPanel() {
       console.error('Error fetching gallery:', error);
     });
 
+    // Real-time Hero Slides
+    const slidesQuery = query(collection(db, 'hero_slides'));
+    const unsubscribeSlides = onSnapshot(slidesQuery, (snapshot) => {
+      const slidesList = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as SlideItem[];
+      
+      // Sort by createdAt desc in memory
+      slidesList.sort((a: any, b: any) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
+      
+      setSlides(slidesList);
+    }, (error) => {
+      console.error('Error fetching slides:', error);
+    });
+
     return () => {
       unsubscribeAuth();
       unsubscribeNews();
       unsubscribeGallery();
+      unsubscribeSlides();
     };
   }, [lang]); // Removed fbUser from dependencies to prevent loop
 
@@ -315,6 +371,75 @@ export default function AdminPanel() {
     setItemToDelete({ id, type: 'news' });
   };
 
+  const handleAddSlide = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSlide.image) return;
+    if (!fbUser || (fbUser.email?.toLowerCase() !== 'hasankarimov023@gmail.com' && fbUser.email?.toLowerCase() !== 'admin@maktab3.uz')) {
+      setNotification({
+        message: lang === 'uz' ? 'Xatolik: Sizda rasm qo‘shish huquqi yo‘q.' : 'Ошибка: У вас нет прав.',
+        type: 'error'
+      });
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const slideData = {
+        title: newSlide.title,
+        description: newSlide.description,
+        image: newSlide.image,
+        lang: newSlide.lang,
+        createdAt: serverTimestamp()
+      };
+      await addDoc(collection(db, 'hero_slides'), slideData);
+      setIsAddingSlide(false);
+      setNewSlide({ title: '', description: '', image: '', lang: lang as 'uz' | 'ru' });
+      setNotification({
+        message: lang === 'uz' ? 'Slayd saqlandi.' : 'Слайд сохранен.',
+        type: 'success'
+      });
+    } catch (error: any) {
+      console.error('Error adding slide:', error);
+      setNotification({
+        message: lang === 'uz' ? 'Xatolik: Slaydni saqlab bo‘lmadi.' : 'Ошибка: Не удалось сохранить слайд.',
+        type: 'error'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdateSlide = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSlide) return;
+    setIsSaving(true);
+    try {
+      const slideRef = doc(db, 'hero_slides', editingSlide.id.toString());
+      await updateDoc(slideRef, {
+        title: editingSlide.title,
+        description: editingSlide.description,
+        image: editingSlide.image,
+        lang: editingSlide.lang
+      });
+      setEditingSlide(null);
+      setNotification({
+        message: lang === 'uz' ? 'Slayd yangilandi.' : 'Слайд обновлен.',
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Error updating slide:', error);
+      setNotification({
+        message: lang === 'uz' ? 'Xatolik: Yangilashda xatolik yuz berdi.' : 'Ошибка при обновлении.',
+        type: 'error'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteSlide = (id: string | number) => {
+    setItemToDelete({ id, type: 'hero_slides' });
+  };
+
   const handleDeleteGallery = (id: string | number) => {
     setItemToDelete({ id, type: 'gallery' });
   };
@@ -325,7 +450,7 @@ export default function AdminPanel() {
 
     if (!fbUser || (fbUser.email?.toLowerCase() !== 'hasankarimov023@gmail.com' && fbUser.email?.toLowerCase() !== 'admin@maktab3.uz')) {
       setNotification({
-        message: lang === 'uz' ? `Xatolik: Sizda ${type === 'news' ? 'yangilikni' : 'rasmni'} o‘chirish huquqi yo‘q.` : `Ошибка: У вас нет прав на удаление ${type === 'news' ? 'новости' : 'фото'}.`,
+        message: lang === 'uz' ? `Xatolik: Sizda o‘chirish huquqi yo‘q.` : `Ошибка: У вас нет прав на удаление.`,
         type: 'error'
       });
       setItemToDelete(null);
@@ -334,8 +459,14 @@ export default function AdminPanel() {
 
     try {
       await deleteDoc(doc(db, type, id.toString()));
+      
+      let typeLabel = '';
+      if (type === 'news') typeLabel = lang === 'uz' ? 'Yangilik' : 'Новость';
+      else if (type === 'gallery') typeLabel = lang === 'uz' ? 'Rasm' : 'Фото';
+      else if (type === 'hero_slides') typeLabel = lang === 'uz' ? 'Slayd' : 'Слайд';
+      
       setNotification({
-        message: lang === 'uz' ? `${type === 'news' ? 'Yangilik' : 'Rasm'} muvaffaqiyatli o‘chirildi.` : `${type === 'news' ? 'Новость' : 'Фото'} успешно удалена.`,
+        message: lang === 'uz' ? `${typeLabel} muvaffaqiyatli o‘chirildi.` : `${typeLabel} успешно удален(а).`,
         type: 'success'
       });
     } catch (error: any) {
@@ -425,6 +556,15 @@ export default function AdminPanel() {
               {lang === 'uz' ? 'Fotogalereya' : 'Фотогалерея'}
             </div>
           </button>
+          <button 
+            onClick={() => setActiveTab('hero')}
+            className={`py-4 text-sm font-bold transition-all border-b-2 ${activeTab === 'hero' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            <div className="flex items-center gap-2">
+              <LayoutDashboard className="w-4 h-4" />
+              {lang === 'uz' ? 'Slayder' : 'Слайдер'}
+            </div>
+          </button>
         </div>
       </div>
 
@@ -483,7 +623,7 @@ export default function AdminPanel() {
                 )}
               </div>
             </>
-          ) : (
+          ) : activeTab === 'gallery' ? (
             <>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
@@ -499,6 +639,41 @@ export default function AdminPanel() {
                     <img src={item.src} alt={item.alt} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <button onClick={() => handleDeleteGallery(item.id)} className="p-3 bg-red-600 text-white rounded-full hover:bg-red-700 transition-all transform scale-90 group-hover:scale-100"><Trash2 className="w-5 h-5" /></button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{lang === 'uz' ? "Asosiy slayder" : "Главный слайдер"}</h1>
+                  <p className="text-gray-500 text-xs sm:text-sm mt-1">{lang === 'uz' ? "Bosh sahifadagi katta rasmlarni boshqaring." : "Управляйте большими изображениями на главной странице."}</p>
+                </div>
+                <button onClick={() => setIsAddingSlide(true)} className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 w-full sm:w-auto"><Plus className="w-5 h-5" />{lang === 'uz' ? 'Slayd qo\'shish' : 'Добавить слайд'}</button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6">
+                {slides.map((item) => (
+                  <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} key={item.id} className="bg-white p-6 rounded-[32px] border border-gray-200 flex flex-col md:flex-row gap-6 group hover:shadow-xl hover:shadow-gray-100 transition-all">
+                    <div className="w-full md:w-64 h-40 rounded-2xl bg-gray-100 overflow-hidden shrink-0 relative">
+                      <img src={item.image} alt="" className="w-full h-full object-cover" />
+                      <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur rounded-lg text-[10px] font-bold text-blue-600 uppercase">
+                        {item.lang}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg text-gray-900 mb-2">{item.title}</h3>
+                      <p className="text-sm text-gray-500 line-clamp-2 mb-4">{item.description}</p>
+                      <div className="flex gap-2">
+                        <button onClick={() => setEditingSlide(item)} className="px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-100 transition-all flex items-center gap-2">
+                          <Edit2 className="w-4 h-4" /> {lang === 'uz' ? 'Tahrirlash' : 'Изменить'}
+                        </button>
+                        <button onClick={() => handleDeleteSlide(item.id)} className="px-4 py-2 text-sm font-bold text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-all flex items-center gap-2">
+                          <Trash2 className="w-4 h-4" /> {lang === 'uz' ? 'O\'chirish' : 'Удалить'}
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
@@ -559,6 +734,60 @@ export default function AdminPanel() {
                       <Save className="w-5 h-5" />
                     )}
                     {lang === 'uz' ? 'Saqlash' : 'Сохранить'}
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {isAddingSlide && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAddingSlide(false)} className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[32px] shadow-2xl overflow-hidden">
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-6"><h3 className="text-xl font-bold text-gray-900">{lang === 'uz' ? "Yangi slayd qo'shish" : "Добавить новый слайд"}</h3><button onClick={() => setIsAddingSlide(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400" /></button></div>
+                <form onSubmit={handleAddSlide} className="space-y-4">
+                  <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Sarlavha' : 'Заголовок'}</label><div className="relative"><Type className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" required value={newSlide.title} onChange={(e) => setNewSlide({...newSlide, title: e.target.value})} placeholder={lang === 'uz' ? "Slayd sarlavhasi..." : "Заголовок слайда..."} className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm" /></div></div>
+                  <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Rasm yuklash' : 'Загрузить фото'}</label><div className="relative"><label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 transition-all overflow-hidden">{newSlide.image ? <img src={newSlide.image} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex flex-col items-center justify-center pt-5 pb-6"><ImageIcon className="w-8 h-8 text-gray-400 mb-2" /><p className="text-xs text-gray-500 font-medium">{lang === 'uz' ? "Rasm tanlash uchun bosing" : "Нажмите, чтобы выбрать фото"}</p></div>}<input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'hero')} className="hidden" /></label></div></div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Til' : 'Язык'}</label>
+                    <select value={newSlide.lang} onChange={(e) => setNewSlide({...newSlide, lang: e.target.value as 'uz' | 'ru'})} className="w-full px-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm">
+                      <option value="uz">O'zbekcha</option>
+                      <option value="ru">Русский</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Tavsif' : 'Описание'}</label><div className="relative"><AlignLeft className="absolute left-4 top-4 w-5 h-5 text-gray-400" /><textarea required value={newSlide.description} onChange={(e) => setNewSlide({...newSlide, description: e.target.value})} placeholder={lang === 'uz' ? "Qisqacha tavsif..." : "Краткое описание..."} rows={3} className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm resize-none" /></div></div>
+                  <button type="submit" disabled={isSaving} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 mt-4 disabled:opacity-70">
+                    {isSaving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-5 h-5" />}
+                    {lang === 'uz' ? 'Saqlash' : 'Сохранить'}
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {editingSlide && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingSlide(null)} className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[32px] shadow-2xl overflow-hidden">
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-6"><h3 className="text-xl font-bold text-gray-900">{lang === 'uz' ? 'Slaydni tahrirlash' : 'Редактировать слайд'}</h3><button onClick={() => setEditingSlide(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400" /></button></div>
+                <form onSubmit={handleUpdateSlide} className="space-y-4">
+                  <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Sarlavha' : 'Заголовок'}</label><div className="relative"><Type className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" required value={editingSlide.title} onChange={(e) => setEditingSlide({...editingSlide, title: e.target.value})} className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm" /></div></div>
+                  <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Rasm yuklash' : 'Загрузить фото'}</label><div className="relative"><label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 transition-all overflow-hidden">{editingSlide.image ? <img src={editingSlide.image} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex flex-col items-center justify-center pt-5 pb-6"><ImageIcon className="w-8 h-8 text-gray-400 mb-2" /><p className="text-xs text-gray-500 font-medium">{lang === 'uz' ? "Rasm tanlash uchun bosing" : "Нажмите, чтобы выбрать фото"}</p></div>}<input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'hero-edit')} className="hidden" /></label></div></div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Til' : 'Язык'}</label>
+                    <select value={editingSlide.lang} onChange={(e) => setEditingSlide({...editingSlide, lang: e.target.value as 'uz' | 'ru'})} className="w-full px-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm">
+                      <option value="uz">O'zbekcha</option>
+                      <option value="ru">Русский</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Tavsif' : 'Описание'}</label><div className="relative"><AlignLeft className="absolute left-4 top-4 w-5 h-5 text-gray-400" /><textarea required value={editingSlide.description} onChange={(e) => setEditingSlide({...editingSlide, description: e.target.value})} rows={3} className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm resize-none" /></div></div>
+                  <button type="submit" disabled={isSaving} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 mt-4 disabled:opacity-70">
+                    {isSaving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-5 h-5" />}
+                    {lang === 'uz' ? "O'zgarishlarni saqlash" : "Сохранить изменения"}
                   </button>
                 </form>
               </div>

@@ -1,25 +1,65 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
-import { heroSlides } from '../data';
+import { heroSlides as initialHeroSlides } from '../data';
 import { useLanguage } from '../context/LanguageContext';
+import { db } from '../firebase';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+
+interface Slide {
+  id: string | number;
+  title: string;
+  description: string;
+  image: string;
+  lang: string;
+}
 
 export default function Hero() {
   const [current, setCurrent] = useState(0);
+  const [slides, setSlides] = useState<Slide[]>([]);
   const { lang, t } = useLanguage();
 
   useEffect(() => {
+    const q = query(collection(db, 'hero_slides'), orderBy('createdAt', 'desc'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const slidesList = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as Slide[];
+      
+      const filteredSlides = slidesList.filter(slide => slide.lang === lang);
+      
+      if (filteredSlides.length > 0) {
+        setSlides(filteredSlides);
+      } else {
+        setSlides(initialHeroSlides[lang as 'uz' | 'ru']);
+      }
+    }, (error) => {
+      console.error('Firestore error in Hero:', error);
+      setSlides(initialHeroSlides[lang as 'uz' | 'ru']);
+    });
+
+    return () => unsubscribe();
+  }, [lang]);
+
+  useEffect(() => {
+    if (slides.length === 0) return;
     const timer = setInterval(() => {
-      setCurrent((prev) => (prev === heroSlides[lang].length - 1 ? 0 : prev + 1));
+      setCurrent((prev) => (prev >= slides.length - 1 ? 0 : prev + 1));
     }, 6000);
     return () => clearInterval(timer);
-  }, [lang]);
+  }, [slides.length]);
+
+  if (slides.length === 0) return null;
+
+  const currentSlide = slides[current] || slides[0];
 
   return (
     <section id="about" className="relative h-screen w-full overflow-hidden bg-gray-900">
       <AnimatePresence mode="wait">
         <motion.div
-          key={`${lang}-${current}`}
+          key={`${lang}-${currentSlide.id}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -29,8 +69,8 @@ export default function Hero() {
           {/* Background Image */}
           <div className="absolute inset-0">
             <img
-              src={heroSlides[lang][current].image}
-              alt={heroSlides[lang][current].title}
+              src={currentSlide.image}
+              alt={currentSlide.title}
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
             />
@@ -54,7 +94,7 @@ export default function Hero() {
                 transition={{ delay: 0.4 }}
                 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-6 leading-[1.1]"
               >
-                {heroSlides[lang][current].title}
+                {currentSlide.title}
               </motion.h2>
               <motion.p
                 initial={{ y: 20, opacity: 0 }}
@@ -62,7 +102,7 @@ export default function Hero() {
                 transition={{ delay: 0.6 }}
                 className="text-base sm:text-lg lg:text-xl text-gray-200 mb-10 leading-relaxed line-clamp-3 sm:line-clamp-none"
               >
-                {heroSlides[lang][current].description}
+                {currentSlide.description}
               </motion.p>
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
@@ -85,7 +125,7 @@ export default function Hero() {
 
       {/* Indicators */}
       <div className="absolute bottom-10 left-4 sm:left-10 flex gap-1.5 sm:gap-2 z-20">
-        {heroSlides[lang].map((_, idx) => (
+        {slides.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setCurrent(idx)}
