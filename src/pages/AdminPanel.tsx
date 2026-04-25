@@ -19,7 +19,7 @@ import {
   Images
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import { newsData as initialNews, galleryImages as initialGallery, heroSlides as initialHeroSlides } from '../data';
+import { newsData as initialNews, galleryImages as initialGallery } from '../data';
 import { db, auth, logout as firebaseLogout } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { 
