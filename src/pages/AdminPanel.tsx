@@ -19,7 +19,7 @@ import {
   Images
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import { newsData as initialNews, galleryImages as initialGallery } from '../data';
+import { newsData as initialNews, galleryImages as initialGallery, heroSlides as initialHeroSlides } from '../data';
 import { db, auth, logout as firebaseLogout } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { 
@@ -41,6 +41,7 @@ interface NewsItem {
   date: string;
   image: string;
   excerpt: string;
+  lang: 'uz' | 'ru';
 }
 
 interface GalleryItem {
@@ -74,7 +75,8 @@ export default function AdminPanel() {
     title: '',
     image: '',
     excerpt: '',
-    date: new Date().toLocaleDateString('ru-RU')
+    date: new Date().toLocaleDateString('ru-RU'),
+    lang: lang as 'uz' | 'ru'
   });
 
   const [newGallery, setNewGallery] = useState({
@@ -113,15 +115,17 @@ export default function AdminPanel() {
     setIsImporting(true);
     try {
       // Import News
-      const newsToImport = initialNews[lang as 'uz' | 'ru'];
-      for (const item of newsToImport) {
-        await addDoc(collection(db, 'news'), {
-          title: item.title,
-          date: item.date,
-          image: item.image,
-          excerpt: item.excerpt,
-          createdAt: serverTimestamp()
-        });
+      for (const [nLang, langNews] of Object.entries(initialNews)) {
+        for (const item of langNews) {
+          await addDoc(collection(db, 'news'), {
+            title: item.title,
+            date: item.date,
+            image: item.image,
+            excerpt: item.excerpt,
+            lang: nLang,
+            createdAt: serverTimestamp()
+          });
+        }
       }
 
       // Import Gallery
@@ -283,6 +287,7 @@ export default function AdminPanel() {
         date: newNews.date || new Date().toLocaleDateString('ru-RU'),
         image: newNews.image || `https://picsum.photos/seed/${Date.now()}/800/600`,
         excerpt: newNews.excerpt,
+        lang: newNews.lang,
         createdAt: serverTimestamp()
       };
       
@@ -349,7 +354,8 @@ export default function AdminPanel() {
         title: editingItem.title,
         date: editingItem.date,
         image: editingItem.image,
-        excerpt: editingItem.excerpt
+        excerpt: editingItem.excerpt,
+        lang: editingItem.lang
       });
       setEditingItem(null);
       setNotification({
@@ -695,6 +701,13 @@ export default function AdminPanel() {
                   <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Sarlavha' : 'Заголовок'}</label><div className="relative"><Type className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" required value={newNews.title} onChange={(e) => setNewNews({...newNews, title: e.target.value})} placeholder={lang === 'uz' ? "Yangilik sarlavhasini yozing" : "Введите заголовок новости"} className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm" /></div></div>
                   <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Rasm yuklash' : 'Загрузить фото'}</label><div className="relative"><label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 transition-all overflow-hidden">{newNews.image ? <img src={newNews.image} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex flex-col items-center justify-center pt-5 pb-6"><ImageIcon className="w-8 h-8 text-gray-400 mb-2" /><p className="text-xs text-gray-500 font-medium">{lang === 'uz' ? "Rasm tanlash uchun bosing" : "Нажмите, чтобы выбрать фото"}</p></div>}<input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'news')} className="hidden" /></label></div></div>
                   <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Sana' : 'Дата'}</label><div className="relative"><Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" required value={newNews.date} onChange={(e) => setNewNews({...newNews, date: e.target.value})} placeholder="DD.MM.YYYY" className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm" /></div></div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Til' : 'Язык'}</label>
+                    <select value={newNews.lang} onChange={(e) => setNewNews({...newNews, lang: e.target.value as 'uz' | 'ru'})} className="w-full px-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm">
+                      <option value="uz">O'zbekcha</option>
+                      <option value="ru">Русский</option>
+                    </select>
+                  </div>
                   <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Matn' : 'Текст'}</label><div className="relative"><AlignLeft className="absolute left-4 top-4 w-5 h-5 text-gray-400" /><textarea required value={newNews.excerpt} onChange={(e) => setNewNews({...newNews, excerpt: e.target.value})} placeholder={lang === 'uz' ? "Yangilik haqida batafsil ma'lumot..." : "Подробная информация о новости..."} rows={4} className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm resize-none" /></div></div>
                   <button 
                     type="submit" 
@@ -722,7 +735,6 @@ export default function AdminPanel() {
                 <div className="flex items-center justify-between mb-6"><h3 className="text-xl font-bold text-gray-900">{lang === 'uz' ? "Rasm qo'shish" : "Добавить фото"}</h3><button onClick={() => setIsAddingGallery(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400" /></button></div>
                 <form onSubmit={handleAddGallery} className="space-y-4">
                   <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Rasm yuklash' : 'Загрузить фото'}</label><div className="relative"><label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 transition-all overflow-hidden">{newGallery.src ? <img src={newGallery.src} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex flex-col items-center justify-center pt-5 pb-6"><ImageIcon className="w-8 h-8 text-gray-400 mb-2" /><p className="text-xs text-gray-500 font-medium">{lang === 'uz' ? "Rasm tanlash uchun bosing" : "Нажмите, чтобы выбрать фото"}</p></div>}<input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'gallery')} className="hidden" /></label></div></div>
-                  <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Tavsif' : 'Описание'}</label><div className="relative"><Type className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" value={newGallery.alt} onChange={(e) => setNewGallery({...newGallery, alt: e.target.value})} placeholder={lang === 'uz' ? "Rasm tavsifi..." : "Описание фото..."} className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm" /></div></div>
                   <button 
                     type="submit" 
                     disabled={isSaving}
@@ -805,6 +817,13 @@ export default function AdminPanel() {
                   <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Sarlavha' : 'Заголовок'}</label><div className="relative"><Type className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" required value={editingItem.title} onChange={(e) => setEditingItem({...editingItem, title: e.target.value})} placeholder={lang === 'uz' ? "Yangilik sarlavhasini yozing" : "Введите заголовок новости"} className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm" /></div></div>
                   <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Rasm yuklash' : 'Загрузить фото'}</label><div className="relative"><label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 transition-all overflow-hidden">{editingItem.image ? <img src={editingItem.image} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex flex-col items-center justify-center pt-5 pb-6"><ImageIcon className="w-8 h-8 text-gray-400 mb-2" /><p className="text-xs text-gray-500 font-medium">{lang === 'uz' ? "Rasm tanlash uchun bosing" : "Нажмите, чтобы выбрать фото"}</p></div>}<input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'edit')} className="hidden" /></label></div></div>
                   <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Sana' : 'Дата'}</label><div className="relative"><Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="text" required value={editingItem.date} onChange={(e) => setEditingItem({...editingItem, date: e.target.value})} placeholder="DD.MM.YYYY" className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm" /></div></div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Til' : 'Язык'}</label>
+                    <select value={editingItem.lang} onChange={(e) => setEditingItem({...editingItem, lang: e.target.value as 'uz' | 'ru'})} className="w-full px-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm">
+                      <option value="uz">O'zbekcha</option>
+                      <option value="ru">Русский</option>
+                    </select>
+                  </div>
                   <div className="space-y-2"><label className="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">{lang === 'uz' ? 'Matn' : 'Текст'}</label><div className="relative"><AlignLeft className="absolute left-4 top-4 w-5 h-5 text-gray-400" /><textarea required value={editingItem.excerpt} onChange={(e) => setEditingItem({...editingItem, excerpt: e.target.value})} placeholder={lang === 'uz' ? "Yangilik haqida batafsil ma'lumot..." : "Подробная информация о новости..."} rows={4} className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm resize-none" /></div></div>
                   <button 
                     type="submit" 

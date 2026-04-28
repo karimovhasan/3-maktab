@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Calendar, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { newsData as initialNews } from '../data';
 import { useLanguage } from '../context/LanguageContext';
 import { db } from '../firebase';
@@ -26,28 +27,38 @@ export default function NewsSection() {
       const newsList = snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id
-      })) as NewsItem[];
+      })) as any[];
       
-      if (newsList.length > 0) {
+      const filteredNews = newsList.filter(item => item.lang === lang);
+      
+      if (filteredNews.length > 0) {
         // Sort by createdAt desc in memory
-        newsList.sort((a: any, b: any) => {
+        filteredNews.sort((a, b) => {
+          const timeA = a.createdAt?.seconds || 0;
+          const timeB = b.createdAt?.seconds || 0;
+          return timeB - timeA;
+        });
+        setNews(filteredNews);
+      } else if (newsList.length > 0) {
+        // Fallback to any available dynamic news if current language has none
+        newsList.sort((a, b) => {
           const timeA = a.createdAt?.seconds || 0;
           const timeB = b.createdAt?.seconds || 0;
           return timeB - timeA;
         });
         setNews(newsList);
       } else {
-        setNews(initialNews['uz']);
+        setNews(initialNews[lang as 'uz' | 'ru']);
       }
     }, (error) => {
       console.error('Firestore error in NewsSection:', error);
-      setNews(initialNews['uz']);
+      setNews(initialNews[lang as 'uz' | 'ru']);
     });
 
     return () => {
       unsubscribeNews();
     };
-  }, []);
+  }, [lang]);
 
   return (
     <section id="news" className="py-24 bg-gray-50">
@@ -58,13 +69,13 @@ export default function NewsSection() {
               {lang === 'uz' ? 'Yangiliklar' : 'Новости'}
             </span>
             <h2 className="text-4xl font-bold text-gray-900 mt-2">
-              {lang === 'uz' ? 'So‘nggi xabarlar va tadbirlar' : 'Последние новости va tadbirlar'}
+              {lang === 'uz' ? 'So‘nggi xabarlar va tadbirlar' : 'Последние новости и мероприятия'}
             </h2>
           </div>
-          <button className="hidden lg:flex items-center gap-2 text-blue-600 font-bold hover:gap-3 transition-all">
+          <Link to="/news" className="hidden lg:flex items-center gap-2 text-blue-600 font-bold hover:gap-3 transition-all">
             {lang === 'uz' ? 'Barchasini ko‘rish' : 'Посмотреть все'}
             <ArrowRight className="w-5 h-5" />
-          </button>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -108,9 +119,9 @@ export default function NewsSection() {
           ))}
         </div>
 
-        <button className="lg:hidden w-full mt-8 py-4 bg-white border border-gray-200 rounded-xl text-blue-600 font-bold">
+        <Link to="/news" className="lg:hidden block text-center w-full mt-8 py-4 bg-white border border-gray-200 rounded-xl text-blue-600 font-bold">
           {lang === 'uz' ? 'Barchasini ko‘rish' : 'Посмотреть все'}
-        </button>
+        </Link>
       </div>
 
       {/* News Detail Modal */}

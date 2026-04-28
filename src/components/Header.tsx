@@ -65,15 +65,15 @@ export default function Header() {
               <div className="bg-blue-600 p-1.5 sm:p-2 rounded-lg">
                 <GraduationCap className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
-              <div>
+             <div>
                 <h1 className={`font-bold leading-tight transition-all ${
                   scrolled ? 'text-gray-900 text-base sm:text-lg' : 'text-white text-lg sm:text-xl'
                 }`}>
-                  Termiz 3-maktab
+                  {lang === 'uz' ? 'Termiz 3-maktab' : 'Школа №3 г. Термеза'}
                 </h1>
                 {!scrolled && (
                   <p className="text-white/80 text-[10px] sm:text-xs font-medium tracking-wide hidden xs:block">
-                    Bilim bilan kelajak sari!
+                    {lang === 'uz' ? 'Bilim bilan kelajak sari!' : 'К будущему со знаниями!'}
                   </p>
                 )}
               </div>
@@ -158,7 +158,7 @@ export default function Header() {
                     }`}
                   >
                     <User className="w-4 h-4" />
-                    Kirish
+                    {lang === 'uz' ? 'Kirish' : 'Войти'}
                   </button>
                 )}
               </div>
@@ -214,7 +214,9 @@ export default function Header() {
                     </div>
                     <div>
                       <p className="text-sm font-bold">{user.displayName || 'Admin'}</p>
-                      <p className="text-[10px] font-medium opacity-70 uppercase tracking-wider">Admin Panelga o'tish</p>
+                      <p className="text-[10px] font-medium opacity-70 uppercase tracking-wider">
+                        {lang === 'uz' ? "Admin Panelga o'tish" : 'Перейти в Админ Панель'}
+                      </p>
                     </div>
                   </Link>
                 )}
@@ -278,12 +280,8 @@ export default function Header() {
                     </div>
                   </div>
                   <button className="flex flex-col items-center gap-2 p-3 rounded-xl bg-blue-50 text-blue-600">
-                    <Calendar className="w-6 h-6" />
-                    <span className="text-[10px] font-bold uppercase">Jadval</span>
-                  </button>
-                  <button className="flex flex-col items-center gap-2 p-3 rounded-xl bg-blue-50 text-blue-600">
                     <Newspaper className="w-6 h-6" />
-                    <span className="text-[10px] font-bold uppercase">Xabarlar</span>
+                    <span className="text-[10px] font-bold uppercase">{lang === 'uz' ? 'Xabarlar' : 'Новости'}</span>
                   </button>
                   <button 
                     onClick={() => {
@@ -293,7 +291,7 @@ export default function Header() {
                     className="flex flex-col items-center gap-2 p-3 rounded-xl bg-blue-50 text-blue-600"
                   >
                     <MessageCircle className="w-6 h-6" />
-                    <span className="text-[10px] font-bold uppercase">Savol</span>
+                    <span className="text-[10px] font-bold uppercase">{lang === 'uz' ? 'Savol' : 'Вопрос'}</span>
                   </button>
                 </div>
               </div>

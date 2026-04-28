@@ -1,14 +1,12 @@
 export const navLinks = {
   uz: [
     { name: 'Haqida', href: '#about' },
-    { name: 'Yangiliklar', href: '#news' },
-    { name: 'Dars jadvali', href: '#schedule' },
+    { name: 'Yangiliklar', href: '/news' },
     { name: 'Bog‘lanish', href: '#contact' },
   ],
   ru: [
     { name: 'О школе', href: '#about' },
-    { name: 'Новости', href: '#news' },
-    { name: 'Расписание', href: '#schedule' },
+    { name: 'Новости', href: '/news' },
     { name: 'Контакты', href: '#contact' },
   ]
 };
@@ -107,31 +105,25 @@ import { Calendar, Image as ImageIcon, MessageSquare, BookOpen, Users, Trophy, N
 export const featuresData = {
   uz: [
     {
-      title: 'Dars jadvali',
-      description: 'Sinflar bo‘yicha haftalik dars jadvallari bilan tanishing.',
-      icon: Calendar,
-      color: 'bg-blue-500',
-      href: '#schedule'
-    },
-    {
       title: 'Fotogalereya',
       description: 'Maktab hayotidan yorqin lahzalar va tadbirlar suratlari.',
       icon: ImageIcon,
       color: 'bg-purple-500',
-      href: '#gallery'
+      href: '/gallery'
     },
     {
       title: 'Yangiliklar',
       description: 'Maktab hayotidagi so‘nggi yangiliklar va xabarlar.',
       icon: Newspaper,
       color: 'bg-emerald-500',
-      href: '#news'
+      href: '/news'
     },
     {
       title: 'Elektron kutubxona',
       description: 'O‘quvchilar uchun foydali kitoblar va resurslar bazasi.',
       icon: BookOpen,
       color: 'bg-orange-500',
+      href: 'https://mehrkutubxonasi.uz/'
     },
     {
       title: 'Rahbariyat',
@@ -145,36 +137,30 @@ export const featuresData = {
       description: 'O‘quvchilarimizning fan va sport sohasidagi muvaffaqiyatlari.',
       icon: Trophy,
       color: 'bg-amber-500',
-      href: '#news'
+      href: '/news'
     },
   ],
   ru: [
-    {
-      title: 'Расписание',
-      description: 'Ознакомьтесь с еженедельным расписанием уроков по классам.',
-      icon: Calendar,
-      color: 'bg-blue-500',
-      href: '#schedule'
-    },
     {
       title: 'Фотогалерея',
       description: 'Яркие моменты из школьной жизни и фотографии мероприятий.',
       icon: ImageIcon,
       color: 'bg-purple-500',
-      href: '#gallery'
+      href: '/gallery'
     },
     {
       title: 'Новости',
       description: 'Последние новости и сообщения из жизни школы.',
       icon: Newspaper,
       color: 'bg-emerald-500',
-      href: '#news'
+      href: '/news'
     },
     {
       title: 'Электронная библиотека',
       description: 'База полезных книг и ресурсов для учащихся.',
       icon: BookOpen,
       color: 'bg-orange-500',
+      href: 'https://mehrkutubxonasi.uz/'
     },
     {
       title: 'Руководство',
@@ -188,7 +174,7 @@ export const featuresData = {
       description: 'Успехи наших учеников в области науки и спорта.',
       icon: Trophy,
       color: 'bg-amber-500',
-      href: '#news'
+      href: '/news'
     },
   ]
 };

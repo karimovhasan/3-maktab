@@ -27,8 +27,18 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setError(null);
     
     try {
-      // Map "Admin" to a specific email for Firebase Auth
       const loginLower = trimmedLogin.toLowerCase();
+      
+      // 1. PRIORITY: Local admin check BEFORE any Firebase calls
+      // This prevents "auth/operation-not-allowed" errors if the provider is disabled
+      if (loginLower === 'admin' && password === 'admin1') {
+        localStorage.setItem('isAdminLoggedIn', 'true');
+        window.dispatchEvent(new Event('auth-change'));
+        onClose();
+        return;
+      }
+
+      // Map "Admin" to a specific email for Firebase Auth if they use different credentials
       const email = loginLower === 'admin' ? 'admin@maktab3.uz' : (trimmedLogin.includes('@') ? trimmedLogin : `${loginLower}@maktab3.uz`);
       
       try {
@@ -36,17 +46,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       } catch (signInErr: any) {
         // Handle "operation-not-allowed" error specifically
         if (signInErr.code === 'auth/operation-not-allowed') {
-          // If Firebase is not configured, fallback to local login for the hardcoded admin
-          if (loginLower === 'admin' && password === 'admin1') {
-            localStorage.setItem('isAdminLoggedIn', 'true');
-            window.dispatchEvent(new Event('auth-change'));
-            onClose();
-            return;
-          }
-          
           setError(lang === 'uz' 
-            ? 'Xatolik: Firebase-da login/parol funksiyasi yoqilmagan. Iltimos, quyidagi havolaga kirib uni yoqing: https://console.firebase.google.com/project/gen-lang-client-0334523506/authentication/providers' 
-            : 'Ошибка: В Firebase не включен вход по логину/паролю. Пожалуйста, перейдите по ссылке и включите его: https://console.firebase.google.com/project/gen-lang-client-0334523506/authentication/providers');
+            ? 'Xatolik: Firebase-da login/parol funksiyasi yoqilmagan. Iltimos, Firebase konsolida "Email/Password" provayderini yoqing.' 
+            : 'Ошибка: В Firebase не включен вход по логину/паролю. Пожалуйста, включите провайдер "Email/Password" в консоли Firebase.');
           return;
         }
 

@@ -32,9 +32,15 @@ export default function Hero() {
       
       if (filteredSlides.length > 0) {
         setSlides(filteredSlides);
+      } else if (slidesList.length > 0) {
+        // Fallback to any available dynamic slides if current language has none
+        // This addresses "uzbek images not appearing in Russian mode"
+        setSlides(slidesList);
       } else {
+        // Fallback to initial static slides for the CURRENT language if no dynamic slides exist at all
         setSlides(initialHeroSlides[lang as 'uz' | 'ru']);
       }
+      setCurrent(0); // Reset index when slides change
     }, (error) => {
       console.error('Firestore error in Hero:', error);
       setSlides(initialHeroSlides[lang as 'uz' | 'ru']);

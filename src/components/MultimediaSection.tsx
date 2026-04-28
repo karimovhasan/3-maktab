@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Play, Maximize2 } from 'lucide-react';
+import { Play, Maximize2, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { galleryImages as initialGallery } from '../data';
 import { useLanguage } from '../context/LanguageContext';
 import { db } from '../firebase';
@@ -48,21 +49,21 @@ export default function MultimediaSection() {
             </p>
             <div className="flex flex-wrap gap-4 sm:gap-8">
               <div className="flex-1 min-w-[80px]">
-                <div className="text-2xl sm:text-3xl font-bold text-blue-500 mb-1">1200+</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-500 mb-1">2116+</div>
                 <div className="text-[10px] sm:text-sm text-gray-500 uppercase tracking-wider">
                   {lang === 'uz' ? 'O‘quvchilar' : 'Ученики'}
                 </div>
               </div>
               <div className="hidden xs:block w-px h-12 bg-gray-800" />
               <div className="flex-1 min-w-[80px]">
-                <div className="text-2xl sm:text-3xl font-bold text-blue-500 mb-1">85+</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-500 mb-1">123+</div>
                 <div className="text-[10px] sm:text-sm text-gray-500 uppercase tracking-wider">
                   {lang === 'uz' ? 'O‘qituvchilar' : 'Учителя'}
                 </div>
               </div>
               <div className="hidden xs:block w-px h-12 bg-gray-800" />
               <div className="flex-1 min-w-[80px]">
-                <div className="text-2xl sm:text-3xl font-bold text-blue-500 mb-1">40+</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-500 mb-1">62+</div>
                 <div className="text-[10px] sm:text-sm text-gray-500 uppercase tracking-wider">
                   {lang === 'uz' ? 'Sinflar' : 'Классы'}
                 </div>
@@ -73,7 +74,7 @@ export default function MultimediaSection() {
           <div className="relative group cursor-pointer">
             <div className="aspect-video rounded-3xl overflow-hidden relative">
               <img
-                src="https://picsum.photos/seed/school-video/1280/720"
+                src="/img1.jpg"
                 alt={lang === 'uz' ? 'Maktab videosi' : 'Видео школы'}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 referrerPolicy="no-referrer"
@@ -92,9 +93,10 @@ export default function MultimediaSection() {
         <div>
           <div className="flex justify-between items-end mb-10">
             <h3 className="text-2xl font-bold">{lang === 'uz' ? 'Fotogalereya' : 'Фотогалерея'}</h3>
-            <button className="text-blue-500 font-bold hover:underline">
+            <Link to="/gallery" className="flex items-center gap-2 text-blue-500 font-bold hover:gap-3 transition-all">
               {lang === 'uz' ? 'Barcha rasmlar' : 'Все фотографии'}
-            </button>
+              <ArrowRight className="w-5 h-5" />
+            </Link>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
             {gallery.map((img, idx) => (

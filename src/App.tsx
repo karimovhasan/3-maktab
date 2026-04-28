@@ -8,6 +8,8 @@ import Footer from './components/Footer';
 import Chatbot from './components/Chatbot';
 import AdminPanel from './pages/AdminPanel';
 import LeadershipPage from './pages/LeadershipPage';
+import GalleryPage from './pages/GalleryPage';
+import NewsPage from './pages/NewsPage';
 import { LanguageProvider } from './context/LanguageContext';
 
 function HomePage() {
@@ -35,6 +37,8 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/leadership" element={<LeadershipPage />} />
+            <Route path="/gallery" element={<GalleryPage />} />
+            <Route path="/news" element={<NewsPage />} />
           </Routes>
         </div>
       </Router>

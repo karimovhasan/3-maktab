@@ -1,4 +1,5 @@
 import { GraduationCap, MapPin, Phone, Mail, Facebook, Instagram, Send, ArrowUp, Github } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Footer() {
@@ -45,9 +46,8 @@ export default function Footer() {
             <h3 className="font-bold text-gray-900 mb-6">{t('footer.links')}</h3>
             <ul className="space-y-4">
               <li><a href="#about" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{t('nav.about')}</a></li>
-              <li><a href="#news" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{t('nav.news')}</a></li>
-              <li><a href="#schedule" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{t('nav.schedule')}</a></li>
-              <li><a href="#gallery" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{lang === 'uz' ? 'Fotogalereya' : 'Фотогалерея'}</a></li>
+              <li><Link to="/news" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{t('nav.news')}</Link></li>
+              <li><Link to="/gallery" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{lang === 'uz' ? 'Fotogalereya' : 'Фотогалерея'}</Link></li>
               <li><a href="#contact" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{t('nav.contact')}</a></li>
             </ul>
           </div>
