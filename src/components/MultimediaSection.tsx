@@ -99,9 +99,9 @@ export default function MultimediaSection() {
             </Link>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-            {gallery.map((img, idx) => (
+            {gallery.slice(0, 4).map((img, idx) => (
               <motion.div
-                key={img.id}
+                key={`${img.id}-${idx}`}
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}

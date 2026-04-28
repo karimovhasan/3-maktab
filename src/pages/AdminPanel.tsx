@@ -34,6 +34,13 @@ import {
   orderBy,
   onSnapshot
 } from 'firebase/firestore';
+import { 
+  ref, 
+  uploadString, 
+  getDownloadURL, 
+  deleteObject 
+} from 'firebase/storage';
+import { storage } from '../firebase';
 
 interface NewsItem {
   id: string | number;
@@ -57,6 +64,47 @@ interface SlideItem {
   image: string;
   lang: 'uz' | 'ru';
 }
+
+const compressImage = (file: File, maxWidth = 1200, quality = 0.7): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = (maxWidth / width) * height;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Convert to blob then back to dataURL to ensure compression works correctly across browsers
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('Canvas to Blob failed'));
+            return;
+          }
+          const reader = new FileReader();
+          reader.readAsDataURL(blob);
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<'news' | 'gallery' | 'hero'>('news');
@@ -125,6 +173,8 @@ export default function AdminPanel() {
             lang: nLang,
             createdAt: serverTimestamp()
           });
+          // Small delay to prevent write stream exhaustion
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
 
@@ -135,6 +185,7 @@ export default function AdminPanel() {
           alt: item.alt,
           createdAt: serverTimestamp()
         });
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       // Import Hero Slides
@@ -147,6 +198,7 @@ export default function AdminPanel() {
             lang: sLang,
             createdAt: serverTimestamp()
           });
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
 
@@ -165,25 +217,42 @@ export default function AdminPanel() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'news' | 'gallery' | 'edit' | 'hero' | 'hero-edit' = 'news') => {
+  const uploadToStorage = async (dataUrl: string, path: string): Promise<string> => {
+    const storageRef = ref(storage, path);
+    await uploadString(storageRef, dataUrl, 'data_url');
+    return await getDownloadURL(storageRef);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'news' | 'gallery' | 'edit' | 'hero' | 'hero-edit' = 'news') => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
+      setIsSaving(true);
+      try {
+        const compressed = await compressImage(file);
+        const fileName = `${type}_${Date.now()}_${file.name}`;
+        const path = `school/${type}/${fileName}`;
+        const downloadUrl = await uploadToStorage(compressed, path);
+
         if (type === 'edit' && editingItem) {
-          setEditingItem({ ...editingItem, image: result });
+          setEditingItem({ ...editingItem, image: downloadUrl });
         } else if (type === 'hero-edit' && editingSlide) {
-          setEditingSlide({ ...editingSlide, image: result });
+          setEditingSlide({ ...editingSlide, image: downloadUrl });
         } else if (type === 'gallery') {
-          setNewGallery({ ...newGallery, src: result });
+          setNewGallery({ ...newGallery, src: downloadUrl });
         } else if (type === 'hero') {
-          setNewSlide({ ...newSlide, image: result });
+          setNewSlide({ ...newSlide, image: downloadUrl });
         } else {
-          setNewNews({ ...newNews, image: result });
+          setNewNews({ ...newNews, image: downloadUrl });
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        setNotification({
+          message: lang === 'uz' ? 'Rasmni yuklashda xatolik yuz berdi.' : 'Ошибка при загрузке изображения.',
+          type: 'error'
+        });
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -612,8 +681,8 @@ export default function AdminPanel() {
                     </button>
                   </div>
                 ) : (
-                  news.map((item) => (
-                    <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} key={item.id} className="bg-white p-4 rounded-[24px] border border-gray-200 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 group hover:shadow-xl hover:shadow-gray-100 transition-all">
+                  news.map((item, idx) => (
+                    <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} key={`${item.id}-${idx}`} className="bg-white p-4 rounded-[24px] border border-gray-200 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 group hover:shadow-xl hover:shadow-gray-100 transition-all">
                       <div className="w-full sm:w-24 h-48 sm:h-24 rounded-2xl bg-gray-100 overflow-hidden shrink-0"><img src={item.image} alt="" className="w-full h-full object-cover" /></div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1"><Calendar className="w-3 h-3" />{item.date}</div>
@@ -640,8 +709,8 @@ export default function AdminPanel() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {gallery.map((item) => (
-                  <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} key={item.id} className="relative aspect-square rounded-2xl overflow-hidden group">
+                {gallery.map((item, idx) => (
+                  <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} key={`${item.id}-${idx}`} className="relative aspect-square rounded-2xl overflow-hidden group">
                     <img src={item.src} alt={item.alt} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <button onClick={() => handleDeleteGallery(item.id)} className="p-3 bg-red-600 text-white rounded-full hover:bg-red-700 transition-all transform scale-90 group-hover:scale-100"><Trash2 className="w-5 h-5" /></button>
@@ -661,8 +730,8 @@ export default function AdminPanel() {
               </div>
 
               <div className="grid grid-cols-1 gap-6">
-                {slides.map((item) => (
-                  <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} key={item.id} className="bg-white p-6 rounded-[32px] border border-gray-200 flex flex-col md:flex-row gap-6 group hover:shadow-xl hover:shadow-gray-100 transition-all">
+                {slides.map((item, idx) => (
+                  <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} key={`${item.id}-${idx}`} className="bg-white p-6 rounded-[32px] border border-gray-200 flex flex-col md:flex-row gap-6 group hover:shadow-xl hover:shadow-gray-100 transition-all">
                     <div className="w-full md:w-64 h-40 rounded-2xl bg-gray-100 overflow-hidden shrink-0 relative">
                       <img src={item.image} alt="" className="w-full h-full object-cover" />
                       <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur rounded-lg text-[10px] font-bold text-blue-600 uppercase">

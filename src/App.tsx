@@ -10,6 +10,7 @@ import AdminPanel from './pages/AdminPanel';
 import LeadershipPage from './pages/LeadershipPage';
 import GalleryPage from './pages/GalleryPage';
 import NewsPage from './pages/NewsPage';
+import AboutPage from './pages/AboutPage';
 import { LanguageProvider } from './context/LanguageContext';
 
 function HomePage() {
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/leadership" element={<LeadershipPage />} />
             <Route path="/gallery" element={<GalleryPage />} />
             <Route path="/news" element={<NewsPage />} />
+            <Route path="/about" element={<AboutPage />} />
           </Routes>
         </div>
       </Router>

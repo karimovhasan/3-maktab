@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { heroSlides as initialHeroSlides } from '../data';
 import { useLanguage } from '../context/LanguageContext';
 import { db } from '../firebase';
@@ -116,13 +117,21 @@ export default function Hero() {
                 transition={{ delay: 0.8 }}
                 className="flex flex-col sm:flex-row gap-4"
               >
-                <button className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 group">
+                <Link 
+                  to="/about" 
+                  className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 group"
+                >
                   {lang === 'uz' ? 'Batafsil ma’lumot' : 'Подробнее'}
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-                <button className="w-full sm:w-auto px-8 py-4 bg-white/10 text-white border border-white/20 rounded-xl font-bold hover:bg-white/20 transition-all">
+                </Link>
+                <a 
+                  href="https://t.me/Maktab_3t" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-full sm:w-auto px-8 py-4 bg-white/10 text-white border border-white/20 rounded-xl font-bold hover:bg-white/20 transition-all text-center"
+                >
                   {t('hero.cta')}
-                </button>
+                </a>
               </motion.div>
             </div>
           </div>

@@ -19,7 +19,6 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       uz: {
         'nav.about': 'Haqida',
         'nav.news': 'Yangiliklar',
-        'nav.schedule': 'Dars jadvali',
         'nav.contact': 'Bog‘lanish',
         'nav.leadership': 'Rahbariyat',
         'hero.cta': 'Biz bilan bog‘lanish',
@@ -41,7 +40,6 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       ru: {
         'nav.about': 'О школе',
         'nav.news': 'Новости',
-        'nav.schedule': 'Расписание',
         'nav.contact': 'Контакты',
         'nav.leadership': 'Руководство',
         'hero.cta': 'Связаться с нами',
