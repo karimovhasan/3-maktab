@@ -12,7 +12,7 @@ export default function MultimediaSection() {
   const [gallery, setGallery] = useState(initialGallery);
 
   useEffect(() => {
-    const q = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'gallery'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const galleryList = snapshot.docs.map(doc => ({
@@ -20,6 +20,13 @@ export default function MultimediaSection() {
         id: doc.id
       })) as any[];
       
+      // Sort in memory
+      galleryList.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
+
       if (galleryList.length > 0) {
         setGallery(galleryList);
       } else {
@@ -90,15 +97,15 @@ export default function MultimediaSection() {
           </div>
         </div>
 
-        <div>
-          <div className="flex justify-between items-end mb-10">
-            <h3 className="text-2xl font-bold">{lang === 'uz' ? 'Fotogalereya' : 'Фотогалерея'}</h3>
-            <Link to="/gallery" className="flex items-center gap-2 text-blue-500 font-bold hover:gap-3 transition-all">
+        <div className="mt-12 sm:mt-20">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8 sm:mb-10">
+            <h3 className="text-xl sm:text-2xl font-bold">{lang === 'uz' ? 'Fotogalereya' : 'Фотогалерея'}</h3>
+            <Link to="/gallery" className="flex items-center gap-2 text-blue-500 font-bold hover:gap-3 transition-all text-sm sm:text-base">
               {lang === 'uz' ? 'Barcha rasmlar' : 'Все фотографии'}
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {gallery.slice(0, 4).map((img, idx) => (
               <motion.div
                 key={`${img.id}-${idx}`}
@@ -106,7 +113,7 @@ export default function MultimediaSection() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
-                className="relative aspect-square rounded-2xl overflow-hidden group cursor-pointer"
+                className="relative aspect-square rounded-xl sm:rounded-2xl overflow-hidden group cursor-pointer"
               >
                 <img
                   src={img.src}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Calendar, User, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { newsData as initialNews } from '../data';
@@ -11,9 +11,10 @@ export default function NewsPage() {
   const { lang, t } = useLanguage();
   const [news, setNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedNews, setSelectedNews] = useState<any | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'news'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'news')); // Remove orderBy from query to avoid index issues
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const newsList = snapshot.docs.map(doc => ({
@@ -21,10 +22,20 @@ export default function NewsPage() {
         id: doc.id
       })) as any[];
       
+      // Sort in memory
+      newsList.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
+
       const filteredNews = newsList.filter(item => item.lang === lang);
       
       if (filteredNews.length > 0) {
         setNews(filteredNews);
+      } else if (newsList.length > 0) {
+        // Fallback to all dynamic news if no news for current language exists
+        setNews(newsList);
       } else {
         setNews(initialNews[lang as 'uz' | 'ru']);
       }
@@ -120,7 +131,10 @@ export default function NewsPage() {
                   {item.excerpt}
                 </p>
                 
-                <button className="flex items-center gap-2 text-blue-600 font-bold text-sm group/btn p-2 -ml-2 rounded-xl hover:bg-blue-50 transition-all">
+                <button 
+                  onClick={() => setSelectedNews(item)}
+                  className="flex items-center gap-2 text-blue-600 font-bold text-sm group/btn p-2 -ml-2 rounded-xl hover:bg-blue-50 transition-all cursor-pointer"
+                >
                   {lang === 'uz' ? 'Batafsil' : 'Подробнее'}
                   <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
                 </button>
@@ -129,6 +143,53 @@ export default function NewsPage() {
           ))}
         </div>
       </main>
+
+      {/* News Detail Modal */}
+      <AnimatePresence>
+        {selectedNews && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedNews(null)}
+              className="absolute inset-0 bg-gray-900/60"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            >
+              <button 
+                onClick={() => setSelectedNews(null)}
+                className="absolute top-6 right-6 p-2 bg-white/20 text-white hover:bg-white/40 rounded-full transition-all z-10"
+              >
+                <ArrowRight className="w-5 h-5 rotate-180" />
+              </button>
+              
+              <div className="h-64 sm:h-80 w-full shrink-0">
+                <img src={selectedNews.image} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              </div>
+              
+              <div className="p-8 overflow-y-auto">
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-widest mb-4">
+                  <Calendar className="w-4 h-4" />
+                  {selectedNews.date}
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 leading-tight">
+                  {selectedNews.title}
+                </h2>
+                <div className="prose prose-blue max-w-none">
+                  <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
+                    {selectedNews.excerpt}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

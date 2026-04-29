@@ -24,7 +24,7 @@ export default function InteractiveButtons() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {featuresData[lang].map((feature, idx) => {
             const isInternal = feature.href?.startsWith('/');
             const isAnchor = feature.href?.startsWith('#');

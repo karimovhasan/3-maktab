@@ -11,6 +11,7 @@ import LeadershipPage from './pages/LeadershipPage';
 import GalleryPage from './pages/GalleryPage';
 import NewsPage from './pages/NewsPage';
 import AboutPage from './pages/AboutPage';
+import InDevelopmentPage from './pages/InDevelopmentPage';
 import { LanguageProvider } from './context/LanguageContext';
 
 function HomePage() {
@@ -37,10 +38,11 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/leadership" element={<LeadershipPage />} />
+            <Route path="/leadership" element={<InDevelopmentPage />} />
             <Route path="/gallery" element={<GalleryPage />} />
             <Route path="/news" element={<NewsPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/in-development" element={<InDevelopmentPage />} />
           </Routes>
         </div>
       </Router>

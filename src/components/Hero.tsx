@@ -21,7 +21,7 @@ export default function Hero() {
   const { lang, t } = useLanguage();
 
   useEffect(() => {
-    const q = query(collection(db, 'hero_slides'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'hero_slides'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const slidesList = snapshot.docs.map(doc => ({
@@ -29,6 +29,13 @@ export default function Hero() {
         id: doc.id
       })) as Slide[];
       
+      // Sort in memory
+      slidesList.sort((a: any, b: any) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
+
       const filteredSlides = slidesList.filter(slide => slide.lang === lang);
       
       if (filteredSlides.length > 0) {
@@ -86,12 +93,12 @@ export default function Hero() {
 
           {/* Content */}
           <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
-            <div className="max-w-2xl">
+            <div className="max-w-2xl px-4 sm:px-0">
               <motion.span
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="inline-block px-4 py-1.5 rounded-full bg-blue-600 text-white text-xs font-bold uppercase tracking-widest mb-6"
+                className="inline-block px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-blue-600 text-white text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-4 sm:mb-6"
               >
                 {lang === 'uz' ? 'Xush kelibsiz!' : 'Добро пожаловать!'}
               </motion.span>
@@ -99,7 +106,7 @@ export default function Hero() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-6 leading-[1.1]"
+                className="text-3xl sm:text-5xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 leading-[1.1]"
               >
                 {currentSlide.title}
               </motion.h2>
@@ -107,7 +114,7 @@ export default function Hero() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.6 }}
-                className="text-base sm:text-lg lg:text-xl text-gray-200 mb-10 leading-relaxed line-clamp-3 sm:line-clamp-none"
+                className="text-sm sm:text-lg lg:text-xl text-gray-200 mb-8 sm:mb-10 leading-relaxed line-clamp-4 sm:line-clamp-none"
               >
                 {currentSlide.description}
               </motion.p>

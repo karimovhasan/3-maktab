@@ -29,23 +29,19 @@ export default function NewsSection() {
         id: doc.id
       })) as any[];
       
+      // Sort by createdAt desc in memory
+      newsList.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
+
       const filteredNews = newsList.filter(item => item.lang === lang);
       
       if (filteredNews.length > 0) {
-        // Sort by createdAt desc in memory
-        filteredNews.sort((a, b) => {
-          const timeA = a.createdAt?.seconds || 0;
-          const timeB = b.createdAt?.seconds || 0;
-          return timeB - timeA;
-        });
         setNews(filteredNews);
       } else if (newsList.length > 0) {
         // Fallback to any available dynamic news if current language has none
-        newsList.sort((a, b) => {
-          const timeA = a.createdAt?.seconds || 0;
-          const timeB = b.createdAt?.seconds || 0;
-          return timeB - timeA;
-        });
         setNews(newsList);
       } else {
         setNews(initialNews[lang as 'uz' | 'ru']);
@@ -78,7 +74,7 @@ export default function NewsSection() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {news.map((item, idx) => (
             <motion.article
               key={`${item.id}-${idx}`}

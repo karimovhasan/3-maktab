@@ -42,7 +42,7 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-gray-900 mb-6">{t('footer.links')}</h3>
             <ul className="space-y-4">
-              <li><a href="#about" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{t('nav.about')}</a></li>
+              <li><Link to="/about" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{t('nav.about')}</Link></li>
               <li><Link to="/news" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{t('nav.news')}</Link></li>
               <li><Link to="/gallery" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{lang === 'uz' ? 'Fotogalereya' : 'Фотогалерея'}</Link></li>
               <li><a href="#contact" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">{t('nav.contact')}</a></li>

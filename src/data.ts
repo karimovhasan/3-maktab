@@ -1,11 +1,11 @@
 export const navLinks = {
   uz: [
-    { name: 'Haqida', href: '#about' },
+    { name: 'Haqida', href: '/about' },
     { name: 'Yangiliklar', href: '/news' },
     { name: 'Bog‘lanish', href: '#contact' },
   ],
   ru: [
-    { name: 'О школе', href: '#about' },
+    { name: 'О школе', href: '/about' },
     { name: 'Новости', href: '/news' },
     { name: 'Контакты', href: '#contact' },
   ]
@@ -130,7 +130,7 @@ export const featuresData = {
       description: 'Maktab ma’muriyati va o‘qituvchilar jamoasi haqida ma’lumot.',
       icon: Users,
       color: 'bg-indigo-500',
-      href: '/leadership'
+      href: '/in-development'
     },
     {
       title: 'Yutuqlarimiz',
@@ -167,7 +167,7 @@ export const featuresData = {
       description: 'Информация об администрации школы и педагогическом коллективе.',
       icon: Users,
       color: 'bg-indigo-500',
-      href: '/leadership'
+      href: '/in-development'
     },
     {
       title: 'Наши достижения',

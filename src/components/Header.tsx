@@ -83,24 +83,16 @@ export default function Header() {
             <nav className="hidden lg:flex items-center gap-8">
               {navLinks[lang].map((link) => {
                 const isInternal = link.href.startsWith('/');
+                const commonClass = `text-sm font-medium transition-colors hover:text-blue-600 ${
+                  scrolled ? 'text-gray-600' : 'text-white/90'
+                }`;
+                
                 return isInternal ? (
-                  <Link
-                    key={link.name}
-                    to={link.href}
-                    className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                      scrolled ? 'text-gray-600' : 'text-white/90'
-                    }`}
-                  >
+                  <Link key={link.name} to={link.href} className={commonClass}>
                     {link.name}
                   </Link>
                 ) : (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                      scrolled ? 'text-gray-600' : 'text-white/90'
-                    }`}
-                  >
+                  <a key={link.name} href={link.href} className={commonClass}>
                     {link.name}
                   </a>
                 );
@@ -223,12 +215,14 @@ export default function Header() {
 
                 {navLinks[lang].map((link) => {
                   const isInternal = link.href.startsWith('/');
+                  const commonClass = "block px-3 py-4 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg";
+                  
                   return isInternal ? (
                     <Link
                       key={link.name}
                       to={link.href}
                       onClick={() => setIsOpen(false)}
-                      className="block px-3 py-4 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg"
+                      className={commonClass}
                     >
                       {link.name}
                     </Link>
@@ -237,7 +231,7 @@ export default function Header() {
                       key={link.name}
                       href={link.href}
                       onClick={() => setIsOpen(false)}
-                      className="block px-3 py-4 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg"
+                      className={commonClass}
                     >
                       {link.name}
                     </a>
@@ -279,10 +273,14 @@ export default function Header() {
                       </button>
                     </div>
                   </div>
-                  <button className="flex flex-col items-center gap-2 p-3 rounded-xl bg-blue-50 text-blue-600">
+                  <Link 
+                    to="/news"
+                    onClick={() => setIsOpen(false)}
+                    className="flex flex-col items-center gap-2 p-3 rounded-xl bg-blue-50 text-blue-600"
+                  >
                     <Newspaper className="w-6 h-6" />
                     <span className="text-[10px] font-bold uppercase">{lang === 'uz' ? 'Xabarlar' : 'Новости'}</span>
-                  </button>
+                  </Link>
                   <button 
                     onClick={() => {
                       setIsOpen(false);
