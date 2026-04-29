@@ -32,8 +32,12 @@ export default function MultimediaSection() {
       } else {
         setGallery(initialGallery);
       }
-    }, (error) => {
-      console.error('Firestore error in MultimediaSection:', error);
+    }, (error: any) => {
+      if (error.message?.includes('Quota exceeded')) {
+        console.warn('Firestore quota exceeded in MultimediaSection, falling back to local data.');
+      } else {
+        console.error('Firestore error in MultimediaSection:', error);
+      }
       setGallery(initialGallery);
     });
 

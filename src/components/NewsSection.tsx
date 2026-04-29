@@ -46,8 +46,12 @@ export default function NewsSection() {
       } else {
         setNews(initialNews[lang as 'uz' | 'ru']);
       }
-    }, (error) => {
-      console.error('Firestore error in NewsSection:', error);
+    }, (error: any) => {
+      if (error.message?.includes('Quota exceeded')) {
+        console.warn('Firestore quota exceeded in NewsSection, falling back to local data.');
+      } else {
+        console.error('Firestore error in NewsSection:', error);
+      }
       setNews(initialNews[lang as 'uz' | 'ru']);
     });
 

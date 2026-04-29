@@ -49,9 +49,14 @@ export default function Hero() {
         setSlides(initialHeroSlides[lang as 'uz' | 'ru']);
       }
       setCurrent(0); // Reset index when slides change
-    }, (error) => {
-      console.error('Firestore error in Hero:', error);
+    }, (error: any) => {
+      if (error.message?.includes('Quota exceeded')) {
+        console.warn('Firestore quota exceeded in Hero, falling back to local data.');
+      } else {
+        console.error('Firestore error in Hero:', error);
+      }
       setSlides(initialHeroSlides[lang as 'uz' | 'ru']);
+      setCurrent(0);
     });
 
     return () => unsubscribe();

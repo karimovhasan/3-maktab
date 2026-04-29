@@ -288,8 +288,14 @@ export default function AdminPanel() {
       });
       
       setNews(newsList);
-    }, (error) => {
+    }, (error: any) => {
       console.error('Error fetching news:', error);
+      if (error.message?.includes('Quota exceeded')) {
+        setNotification({
+          message: lang === 'uz' ? 'Xatolik: Firestore limiti tugadi (Quota exceeded). Ma’lumotlar yuklanmadi.' : 'Ошибка: Лимит Firestore исчерпан (Quota exceeded). Данные не загружены.',
+          type: 'error'
+        });
+      }
     });
 
     // Real-time Gallery
@@ -308,8 +314,14 @@ export default function AdminPanel() {
       });
       
       setGallery(galleryList);
-    }, (error) => {
+    }, (error: any) => {
       console.error('Error fetching gallery:', error);
+      if (error.message?.includes('Quota exceeded')) {
+        setNotification({
+          message: lang === 'uz' ? 'Xatolik: Firestore limiti tugadi (Quota exceeded).' : 'Ошибка: Лимит Firestore исчерпан (Quota exceeded).',
+          type: 'error'
+        });
+      }
     });
 
     // Real-time Hero Slides
@@ -328,8 +340,14 @@ export default function AdminPanel() {
       });
       
       setSlides(slidesList);
-    }, (error) => {
+    }, (error: any) => {
       console.error('Error fetching slides:', error);
+      if (error.message?.includes('Quota exceeded')) {
+        setNotification({
+          message: lang === 'uz' ? 'Xatolik: Firestore limiti tugadi (Quota exceeded).' : 'Ошибка: Лимит Firestore исчерпан (Quota exceeded).',
+          type: 'error'
+        });
+      }
     });
 
     return () => {

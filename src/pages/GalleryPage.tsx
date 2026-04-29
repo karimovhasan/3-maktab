@@ -26,8 +26,12 @@ export default function GalleryPage() {
       } else {
         setGallery(initialGallery);
       }
-    }, (error) => {
-      console.error('Firestore error in GalleryPage:', error);
+    }, (error: any) => {
+      if (error.message?.includes('Quota exceeded')) {
+        console.warn('Firestore quota exceeded in GalleryPage, falling back to local data.');
+      } else {
+        console.error('Firestore error in GalleryPage:', error);
+      }
       setGallery(initialGallery);
     });
 
